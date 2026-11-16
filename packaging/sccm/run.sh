@@ -105,5 +105,21 @@ export RUST_BACKTRACE=1
 ARGS=(--resources "$RES" --game-dir "$HERE/game" --name "$PLAYER_NAME" --home "$HERE/home")
 [ "$FULLSCREEN" = 1 ] && ARGS+=(--fullscreen)
 
+# Keep the screen on while the game runs. The game reads the Joy-Cons itself, so the desktop never sees
+# input and counts the player as idle; when the screen timeout then switched the panel off under the
+# fullscreen game, the Switch's X server crashed (seen on battery, never on the charger). Every 20 s,
+# reset X's idle time while the game (this PID, after exec) lives, and hold logind's idle inhibitor.
+if [ "${KEEP_SCREEN_AWAKE:-1}" = 1 ]; then
+  game=$$
+  ( while kill -0 "$game" 2>/dev/null; do
+      xset s reset 2>/dev/null
+      command -v xdotool >/dev/null && xdotool mousemove_relative -- 0 0 2>/dev/null
+      sleep 20
+    done ) &
+  if command -v systemd-inhibit >/dev/null; then
+    INHIBIT=(systemd-inhibit --what=idle --who=Horizon --why="Playing Horizon" --mode=block)
+  fi
+fi
+
 echo "[run.sh] exec ./horizon-client ${ARGS[*]} $*"
-exec "$HERE/horizon-client" "${ARGS[@]}" "$@"
+exec "${INHIBIT[@]}" "$HERE/horizon-client" "${ARGS[@]}" "$@"
