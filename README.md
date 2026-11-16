@@ -1,4 +1,4 @@
-> **Horizon-NX:** this fork adds a Nintendo Switch build of Horizon for SCCM Retro (Switchroot Linux), tested at
+> **HorizonMC-NX:** this fork adds a Nintendo Switch build of Horizon for SCCM Retro (Switchroot Linux), tested at
 > about 75 fps on a Switch OLED. Setup, settings and mods: [packaging/sccm/README-SCCM.md](packaging/sccm/README-SCCM.md).
 > Built by the **SCCM Retro port** workflow. Not affiliated with the Horizon team, Mojang or Microsoft.
 
