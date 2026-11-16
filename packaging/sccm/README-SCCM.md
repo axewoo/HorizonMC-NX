@@ -8,6 +8,9 @@ PC from your own copy of Minecraft: Java Edition, then copy them to the Switch.
 **75 fps** (13 ms frames) in a forest at render distance 6 with far terrain out to 16 chunks, Joy-Cons working
 out of the box.
 
+These numbers were measured with the Switch **overclocked in SCCM Retro**. At stock clocks expect fewer frames;
+see [Overclocking](#overclocking-safely) before raising them.
+
 Commands below are for a Linux PC with the fish shell.
 
 ## 1. Prepare the game files on your PC
@@ -84,6 +87,18 @@ ssh $sw 'pkill -f horizon-client; cd ~/Applications/ports/horizon/game; rm optio
 ```
 
 The next start brings the Switch defaults back.
+
+## Overclocking safely
+
+SCCM Retro can overclock and undervolt the Switch, which is how the numbers above were reached. If you try it:
+
+- Raise clocks **one step at a time** and play a while at each step. Stop at the first freeze, crash or glitch,
+  and go back a step.
+- Undervolt in small steps too: too low a voltage gives random crashes and can corrupt saves. Back up
+  `game/saves/` first.
+- Watch the temperature and keep the fan unobstructed. Docked and long sessions run hotter.
+- **Don't push it to the limit.** A moderate overclock gives most of the gain; the last steps add heat and wear
+  for little. Overclocking is at your own risk, and nobody here can replace a damaged console.
 
 ## 4. Add mods by drag and drop
 
