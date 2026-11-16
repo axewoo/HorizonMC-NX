@@ -74,6 +74,7 @@ jobs:
           echo "$HORIZON_REF" > "$out/HORIZON_COMMIT"
           cp packaging/sccm/run.sh packaging/sccm/sccm-port.json packaging/sccm/horizon-sccm.conf "$out/"
           cp packaging/sccm/README-SCCM.md "$out/"
+          cp -r packaging/sccm/defaults "$out/"
           cp src/LICENSE src/THIRD_PARTY_NOTICES.md "$out/"
           chmod +x "$out/run.sh" "$out/horizon-client"
           file "$out/horizon-client"

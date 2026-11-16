@@ -7,6 +7,7 @@
 #   game/                   saves, options.txt, horizon-mods/, resourcepacks/, shaderpacks/
 #   home/                   logs and crash reports (HORIZON_HOME)
 #   horizon-sccm.conf       settings for this script
+#   defaults/               Switch-tuned options.txt and horizon-graphics.txt for the first start
 #
 # Drag-and-drop mods: copy .hmod files to SCCM-Retro/Horizon/mods/ on the SD card (FAT32 side), or
 # straight into game/horizon-mods/ over SFTP (sftp://sccm@<switch-ip>/). Both are picked up here.
@@ -22,8 +23,6 @@ PLAYER_NAME=Player
 FULLSCREEN=1
 SYNC_FROM_SD=1
 AUTO_ENABLE_MODS=1
-RENDER_DISTANCE=6
-SIMULATION_DISTANCE=5
 if [ -f "$HERE/horizon-sccm.conf" ]; then
   # shellcheck disable=SC1091
   . "$HERE/horizon-sccm.conf"
@@ -90,11 +89,14 @@ if [ "$AUTO_ENABLE_MODS" = 1 ]; then
   done
 fi
 
-# First start only: light settings for the Switch (change them in Options afterwards).
-if [ ! -f "$HERE/game/options.txt" ]; then
-  printf 'renderDistance:%s\nsimulationDistance:%s\n' "$RENDER_DISTANCE" "$SIMULATION_DISTANCE" > "$HERE/game/options.txt"
-  echo "[run.sh] first start: render distance $RENDER_DISTANCE, simulation distance $SIMULATION_DISTANCE"
-fi
+# First start only: the settings tested on a Switch OLED (about 75 fps, render distance 6 with
+# far terrain to 16). Change them in the game's options afterwards; they are never overwritten.
+for f in options.txt horizon-graphics.txt; do
+  if [ ! -f "$HERE/game/$f" ] && [ -f "$HERE/defaults/$f" ]; then
+    cp "$HERE/defaults/$f" "$HERE/game/$f"
+    echo "[run.sh] first start: copied the Switch defaults for $f"
+  fi
+done
 
 export HORIZON_HOME="$HERE/home"
 export HORIZON_LAUNCHER_NO_SELF_UPDATE=1

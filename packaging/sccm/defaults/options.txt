@@ -1,0 +1,9 @@
+renderDistance:6
+simulationDistance:5
+enableVsync:false
+maxFps:90
+fullscreen:true
+guiScale:2
+biomeBlendRadius:2
+mipmapLevels:4
+entityDistanceScaling:0.75
