@@ -145,6 +145,11 @@ fullscreen, the SD sync and the mod auto-enable.
 
 ## Troubleshooting
 
+**The screen goes black and SCCM restarts ("could not start plasma session") a minute or two into a session on
+battery:** SCCM's battery screen timeout switched the screen off under the game, and the Switch's display server
+crashed. `run.sh` keeps the screen awake while Horizon runs (`KEEP_SCREEN_AWAKE=1` in `horizon-sccm.conf`); if you
+turned that off, play on the charger or raise the timeout in SCCM's settings.
+
 Send these from the PC while the Switch is still on (the `/tmp` log is lost at shutdown):
 
 ```fish
