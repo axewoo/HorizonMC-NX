@@ -100,7 +100,7 @@ Avoid the **Extreme** graphics preset: it asks for thousands of chunks and freez
 from the PC:
 
 ```fish
-ssh $sw 'pkill -f horizon-client; cd ~/Applications/ports/horizon/game; rm options.txt horizon-graphics.txt'
+ssh $sw 'pkill -x horizon-client; cd ~/Applications/ports/horizon/game; rm options.txt horizon-graphics.txt'
 ```
 
 The next start brings the Switch defaults back.
