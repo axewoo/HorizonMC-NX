@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: sccm-port-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -25,6 +25,8 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: '0'
+      # Function names and lines in crash reports from the Switch.
+      CARGO_PROFILE_RELEASE_DEBUG: line-tables-only
     steps:
       - uses: actions/checkout@v4
       - name: Rust (the pinned version in tools/ci/rust-version)
@@ -48,7 +50,6 @@ jobs:
           out=dist/horizon
           mkdir -p "$out/resources/26.3"
           cp target/release/horizon-official "$out/horizon-client"
-          strip "$out/horizon-client" || true
           cp packaging/sccm/run.sh packaging/sccm/sccm-port.json packaging/sccm/horizon-sccm.conf "$out/"
           cp packaging/sccm/README-SCCM.md "$out/"
           cp LICENSE THIRD_PARTY_NOTICES.md "$out/"

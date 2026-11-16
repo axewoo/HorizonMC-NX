@@ -98,6 +98,7 @@ fi
 
 export HORIZON_HOME="$HERE/home"
 export HORIZON_LAUNCHER_NO_SELF_UPDATE=1
+export RUST_BACKTRACE=1
 # The Switch's Tegra X1 has Vulkan through NVIDIA's L4T driver; wgpu picks it, then falls back to GL.
 ARGS=(--resources "$RES" --game-dir "$HERE/game" --name "$PLAYER_NAME" --home "$HERE/home")
 [ "$FULLSCREEN" = 1 ] && ARGS+=(--fullscreen)

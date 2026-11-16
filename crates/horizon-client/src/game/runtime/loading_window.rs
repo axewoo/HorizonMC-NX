@@ -313,6 +313,14 @@ pub(super) fn start_game<'a>(
             entity_models.as_deref(),
         )?),
     };
+    // SCCM Retro (Switch, aarch64 Linux): the Tegra X1's slow cores finish the world resources
+    // after the title's first frames, which read them. Wait for them before the game starts.
+    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+    if let Some(loader) = &rest_loader {
+        while !loader.handle.is_finished() {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    }
     let mut game = Game::new(res, pack, gui, options, settings, audio, prepared)?;
     // `new DebugRenderer()` refreshes its list.
     game.refresh_debug_renderers();
