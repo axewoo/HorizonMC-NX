@@ -19,8 +19,13 @@ read [Overclocking safely](#overclocking-safely) before raising them. The tested
 | GPU | stock |
 | SD card | DDR200 mode (Samsung card) |
 | Horizon graphics preset | custom (see section 3), not Extreme |
+| Speedo (chip quality) | CPU 1653, GPU 1659, RAM 1676 |
+| RAM chips | MGCL (S tier in SCCM Retro) |
 
-Every Switch's chip is different: these values are what one OLED ran stably, not settings to copy onto yours.
+**This is a good chip.** Speedo values and the RAM model are set at the factory and differ from one Switch to the
+next; SCCM Retro shows yours. A console with lower speedos or another RAM model may not be stable at these
+clocks and voltages, even though they ran fine here. Treat them as one console's result, not settings to copy
+onto yours, and let SCCM's tuners find your own.
 
 Commands below are for a Linux PC with the fish shell.
 
