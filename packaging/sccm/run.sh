@@ -39,7 +39,7 @@ fi
 # depends on the build, so look in the usual places.
 find_sd_folder() {
   local d
-  for d in /media/*/SCCM-Retro /media/*/*/SCCM-Retro /run/media/*/*/SCCM-Retro /mnt/*/SCCM-Retro \
+  for d in /.boot/SCCM-Retro /boot/SCCM-Retro /media/*/SCCM-Retro /media/*/*/SCCM-Retro /run/media/*/*/SCCM-Retro /mnt/*/SCCM-Retro \
            /boot/SCCM-Retro /sdcard/SCCM-Retro "$HOME"/*/SCCM-Retro; do
     [ -d "$d" ] && { echo "$d"; return 0; }
   done
