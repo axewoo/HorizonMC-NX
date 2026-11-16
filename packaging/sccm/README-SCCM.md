@@ -21,7 +21,7 @@ read [Overclocking safely](#overclocking-safely) before raising them. The tested
 | Horizon graphics preset | custom (see section 3), not Extreme |
 | Speedo (chip quality) | CPU 1653, GPU 1659, RAM 1676 |
 | RAM chips | Samsung K4U6E3S4AA-MGCL, 4 GB (S tier in SCCM Retro) |
-| Fan curve | SCCM custom: fan steps from 35 °C to 60 °C (stock 36 to 47 °C) |
+| Fan curve | custom in SCCM Retro (points 35, 40, 45, 50, 55, 60; stock 36, 40, 43, 44, 45, 47) |
 
 **This is a good chip.** Speedo values and the RAM model are set at the factory and differ from one Switch to the
 next; SCCM Retro shows yours. A console with lower speedos or another RAM model may not be stable at these
