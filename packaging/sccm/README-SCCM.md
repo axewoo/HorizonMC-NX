@@ -8,6 +8,17 @@ Commands below are for a Linux PC with the fish shell (they work in bash too unl
 
 ## 1. Prepare the game files on your PC (once per Minecraft version)
 
+**Easiest: with the Horizon launcher (AppImage).** Sign in, press Play once and wait for the title screen,
+then quit. The launcher has built the files here:
+
+```fish
+find ~/.local/share/horizon-launcher/versions -maxdepth 4 -type d -path '*/.local/horizon-client/26.3'
+```
+
+Use that `26.3` folder in step 2 and skip the rest of this section.
+
+**Without the launcher:**
+
 1. Install Minecraft: Java Edition **26.3** with the official launcher and start it once.
 2. Install a JDK 25 (on Arch/CachyOS: `sudo pacman -S jdk25-openjdk`, or `jdk-openjdk` if that is 25).
 3. Download the official Horizon release for **Linux x86-64** from https://playhorizon.dev/download and
@@ -40,7 +51,7 @@ Commands below are for a Linux PC with the fish shell (they work in bash too unl
    ssh $sw 'mkdir -p ~/Applications/ports'
    tar -xzf horizon-sccm-aarch64.tar.gz
    scp -r horizon $sw:Applications/ports/
-   scp -r ~/horizon-pc/.local/horizon-client/26.3 $sw:Applications/ports/horizon/resources/
+   scp -r ~/horizon-pc/.local/horizon-client/26.3 $sw:Applications/ports/horizon/resources/   # or the launcher's 26.3 folder
    ssh $sw 'chmod +x ~/Applications/ports/horizon/run.sh ~/Applications/ports/horizon/horizon-client'
    ```
 
