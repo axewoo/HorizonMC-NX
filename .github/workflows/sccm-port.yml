@@ -8,6 +8,10 @@ on:
     tags: ['v*-sccm*']
     paths-ignore: ['docs/**', '**/*.md']
   workflow_dispatch:
+    inputs:
+      horizon_ref:
+        description: Horizon commit to build (match the launcher's nightly whose resources you prepared)
+        required: false
 
 permissions:
   contents: write
@@ -27,32 +31,50 @@ jobs:
       CARGO_INCREMENTAL: '0'
       # Function names and lines in crash reports from the Switch.
       CARGO_PROFILE_RELEASE_DEBUG: line-tables-only
+      # The game must match the resources the player prepared with the Horizon launcher: build the
+      # launcher's nightly commit (its folder name ends in it), not this branch's newer main.
+      # Nightly 2026-11-13: versions/nightly-2026-11-13-9f42064.
+      HORIZON_REF: ${{ inputs.horizon_ref || '9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Rust (the pinned version in tools/ci/rust-version)
+      - name: The Horizon source at that commit, with the SCCM patch
+        run: |
+          set -euo pipefail
+          git init -q src
+          git -C src fetch -q --depth 1 "https://github.com/${{ github.repository }}" "$HORIZON_REF"
+          git -C src checkout -q FETCH_HEAD
+          full=$(git -C src rev-parse HEAD)
+          patch=packaging/sccm/patches/$full.patch
+          if [ -f "$patch" ]; then git -C src apply "$PWD/$patch"; echo "applied $patch"
+          else echo "::warning::no SCCM patch for $full"; fi
+      - name: Rust (stable)
         run: |
           if ! command -v rustup >/dev/null; then
             curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
             echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
             export PATH="$HOME/.cargo/bin:$PATH"
           fi
-          bash tools/ci/rustup_install.sh --profile minimal
+          rustup toolchain install stable --profile minimal
+          rustup default stable
       - name: ALSA and udev headers
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev pkg-config
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: sccm-aarch64
+          workspaces: src
       - name: Build the game (horizon-official, shipped as horizon-client)
+        working-directory: src
         run: cargo build --release --locked -p horizon-official --bin horizon-official
       - name: Package the SCCM port folder
         run: |
           set -euo pipefail
           out=dist/horizon
           mkdir -p "$out/resources/26.3"
-          cp target/release/horizon-official "$out/horizon-client"
+          cp src/target/release/horizon-official "$out/horizon-client"
+          echo "$HORIZON_REF" > "$out/HORIZON_COMMIT"
           cp packaging/sccm/run.sh packaging/sccm/sccm-port.json packaging/sccm/horizon-sccm.conf "$out/"
           cp packaging/sccm/README-SCCM.md "$out/"
-          cp LICENSE THIRD_PARTY_NOTICES.md "$out/"
+          cp src/LICENSE src/THIRD_PARTY_NOTICES.md "$out/"
           chmod +x "$out/run.sh" "$out/horizon-client"
           file "$out/horizon-client"
           echo "glibc symbols needed:"; objdump -T "$out/horizon-client" | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -3
