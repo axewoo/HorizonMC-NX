@@ -8,6 +8,26 @@ PC from your own copy of Minecraft: Java Edition, then copy them to the Switch.
 **75 fps** (13 ms frames) in a forest at render distance 6 with far terrain out to 16 chunks, Joy-Cons working
 out of the box.
 
+These numbers were measured with the Switch **overclocked in SCCM Retro**. At stock clocks expect fewer frames;
+read [Overclocking safely](#overclocking-safely) before raising them. The tested console used:
+
+| Setting (SCCM Retro) | Value |
+| --- | --- |
+| RAM | 2833 MHz at 1175 mV |
+| CPU undervolt | preset 1 |
+| CPU clock limit | none |
+| GPU | stock |
+| SD card | DDR200 mode (Samsung card) |
+| Horizon graphics preset | custom (see section 3), not Extreme |
+| Speedo (chip quality) | CPU 1653, GPU 1659, RAM 1676 |
+| RAM chips | Samsung K4U6E3S4AA-MGCL, 4 GB (S tier in SCCM Retro) |
+| Fan curve | custom in SCCM Retro (points 35, 40, 45, 50, 55, 60; stock 36, 40, 43, 44, 45, 47) |
+
+**This is a good chip.** Speedo values and the RAM model are set at the factory and differ from one Switch to the
+next; SCCM Retro shows yours. A console with lower speedos or another RAM model may not be stable at these
+clocks and voltages, even though they ran fine here. Treat them as one console's result, not settings to copy
+onto yours, and let SCCM's tuners find your own.
+
 Commands below are for a Linux PC with the fish shell.
 
 ## 1. Prepare the game files on your PC
@@ -84,6 +104,24 @@ ssh $sw 'pkill -f horizon-client; cd ~/Applications/ports/horizon/game; rm optio
 ```
 
 The next start brings the Switch defaults back.
+
+## Overclocking safely
+
+SCCM Retro can overclock and undervolt the Switch, which is how the numbers above were reached. Its own tuners
+(Settings > Overclocking and tuning: RAM overclock, CPU undervolt) find the fastest stable RAM speed and the
+lowest stable CPU voltage for your console, never keep a setting that failed, and run only undocked on the
+charger. Use them rather than typing values in, following SCCM's
+[overclocking guide](https://guides.socalconsolemodding.com/sccm-retro-ram-overclock-tool/). If you tune by hand:
+
+- Raise clocks **one step at a time** and play a while at each step. Stop at the first freeze, crash or glitch,
+  and go back a step.
+- Undervolt in small steps too: too low a voltage gives random crashes and can corrupt saves. Back up
+  `game/saves/` first.
+- Watch the temperature and keep the fan unobstructed. Docked and long sessions run hotter.
+- **Don't push it to the limit.** A moderate overclock gives most of the gain; the last steps add heat and wear
+  for little. Overclocking is at your own risk, and nobody here can replace a damaged console.
+- If the console won't start properly, boot **SCCM Retro (Safe Mode)** once (stock speeds) and use **Reset to
+  stock** in the overclocking settings.
 
 ## 4. Add mods by drag and drop
 
