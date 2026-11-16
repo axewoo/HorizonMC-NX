@@ -9,7 +9,18 @@ PC from your own copy of Minecraft: Java Edition, then copy them to the Switch.
 out of the box.
 
 These numbers were measured with the Switch **overclocked in SCCM Retro**. At stock clocks expect fewer frames;
-see [Overclocking](#overclocking-safely) before raising them.
+read [Overclocking safely](#overclocking-safely) before raising them. The tested console used:
+
+| Setting (SCCM Retro) | Value |
+| --- | --- |
+| RAM | 2833 MHz at 1175 mV |
+| CPU undervolt | preset 1 |
+| CPU clock limit | none |
+| GPU | stock |
+| SD card | DDR200 mode (Samsung card) |
+| Horizon graphics preset | custom (see section 3), not Extreme |
+
+Every Switch's chip is different: these values are what one OLED ran stably, not settings to copy onto yours.
 
 Commands below are for a Linux PC with the fish shell.
 
@@ -90,7 +101,11 @@ The next start brings the Switch defaults back.
 
 ## Overclocking safely
 
-SCCM Retro can overclock and undervolt the Switch, which is how the numbers above were reached. If you try it:
+SCCM Retro can overclock and undervolt the Switch, which is how the numbers above were reached. Its own tuners
+(Settings > Overclocking and tuning: RAM overclock, CPU undervolt) find the fastest stable RAM speed and the
+lowest stable CPU voltage for your console, never keep a setting that failed, and run only undocked on the
+charger. Use them rather than typing values in, following SCCM's
+[overclocking guide](https://guides.socalconsolemodding.com/sccm-retro-ram-overclock-tool/). If you tune by hand:
 
 - Raise clocks **one step at a time** and play a while at each step. Stop at the first freeze, crash or glitch,
   and go back a step.
@@ -99,6 +114,8 @@ SCCM Retro can overclock and undervolt the Switch, which is how the numbers abov
 - Watch the temperature and keep the fan unobstructed. Docked and long sessions run hotter.
 - **Don't push it to the limit.** A moderate overclock gives most of the gain; the last steps add heat and wear
   for little. Overclocking is at your own risk, and nobody here can replace a damaged console.
+- If the console won't start properly, boot **SCCM Retro (Safe Mode)** once (stock speeds) and use **Reset to
+  stock** in the overclocking settings.
 
 ## 4. Add mods by drag and drop
 
