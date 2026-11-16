@@ -1,0 +1,71 @@
+name: SCCM Retro port (aarch64 Linux)
+# Builds Horizon for the Nintendo Switch running SCCM Retro (Switchroot Linux, aarch64) and packages it as an
+# SCCM Retro custom port folder: horizon/{horizon-client, run.sh, sccm-port.json, horizon-sccm.conf, README}.
+# No Minecraft files are built in or shipped: resources are prepared on the player's own PC.
+on:
+  push:
+    branches: ['claude/**', 'sccm', 'sccm-*']
+    tags: ['v*-sccm*']
+    paths-ignore: ['docs/**', '**/*.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sccm-port-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Native aarch64 runner: no cross toolchain or arm64 sysroot needed. Ubuntu 22.04 keeps the glibc
+    # requirement at 2.35, at or below what Switchroot's Ubuntu builds ship.
+    runs-on: ubuntu-22.04-arm
+    timeout-minutes: 240
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust (the pinned version in tools/ci/rust-version)
+        run: |
+          if ! command -v rustup >/dev/null; then
+            curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+            export PATH="$HOME/.cargo/bin:$PATH"
+          fi
+          bash tools/ci/rustup_install.sh --profile minimal
+      - name: ALSA and udev headers
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev pkg-config
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: sccm-aarch64
+      - name: Build the game (horizon-official, shipped as horizon-client)
+        run: cargo build --release --locked -p horizon-official --bin horizon-official
+      - name: Package the SCCM port folder
+        run: |
+          set -euo pipefail
+          out=dist/horizon
+          mkdir -p "$out/resources/26.3"
+          cp target/release/horizon-official "$out/horizon-client"
+          strip "$out/horizon-client" || true
+          cp packaging/sccm/run.sh packaging/sccm/sccm-port.json packaging/sccm/horizon-sccm.conf "$out/"
+          cp packaging/sccm/README-SCCM.md "$out/"
+          cp LICENSE THIRD_PARTY_NOTICES.md "$out/"
+          chmod +x "$out/run.sh" "$out/horizon-client"
+          file "$out/horizon-client"
+          echo "glibc symbols needed:"; objdump -T "$out/horizon-client" | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -3
+          "$out/horizon-client" --help | head -3
+          tar -C dist -czf dist/horizon-sccm-aarch64.tar.gz horizon
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: horizon-sccm-aarch64
+          path: dist/horizon-sccm-aarch64.tar.gz
+          if-no-files-found: error
+      - name: Attach to the release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/horizon-sccm-aarch64.tar.gz
+          prerelease: true

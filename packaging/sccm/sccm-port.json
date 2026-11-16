@@ -1,0 +1,4 @@
+{
+  "title": "Horizon (Minecraft)",
+  "exec": ["./run.sh"]
+}
