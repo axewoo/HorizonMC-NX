@@ -1,0 +1,116 @@
+# Horizon on SCCM Retro (Nintendo Switch)
+
+Horizon is Minecraft: Java Edition 26.3 rewritten in Rust. This folder is Horizon built for the Switch's ARM
+processor, packaged as an SCCM Retro custom port. It ships **no Minecraft files**: you prepare them once on your
+PC from your own copy of Minecraft: Java Edition, then copy them to the Switch.
+
+**Tested on a Switch OLED** (SCCM Retro, Switchroot Fedora 42, NVIDIA L4T driver 32.7.6, Vulkan): about
+**75 fps** (13 ms frames) in a forest at render distance 6 with far terrain out to 16 chunks, Joy-Cons working
+out of the box.
+
+Commands below are for a Linux PC with the fish shell.
+
+## 1. Prepare the game files on your PC
+
+1. Install the **Horizon launcher** (AppImage) from https://playhorizon.dev/download, sign in, press **Play**
+   once and wait for the title screen, then quit. It builds the files from your Minecraft 26.3 install.
+2. Find them:
+
+   ```fish
+   find ~/.local/share/horizon-launcher/versions -maxdepth 4 -type d -path '*/.local/horizon-client/26.3'
+   ```
+
+   You get a folder like `versions/nightly-2026-11-13-9f42064/.local/horizon-client/26.3` (about 800 MB).
+
+**The Switch build must match that launcher version.** The last part of the folder name (`9f42064`) is the
+Horizon commit. The port's `HORIZON_COMMIT` file says which commit it was built from. When they differ the game
+stops at start with "world resources failed to load ... re-run horizon-prepare". To build the port for another
+launcher nightly, run the **SCCM Retro port** workflow in GitHub Actions with that commit as `horizon_ref` (and
+add a patch for it in `packaging/sccm/patches/` if the one-line wait fix does not apply).
+
+## 2. Install the port on the Switch
+
+Copying 800 MB over Wi-Fi can freeze SCCM Retro, so put the SD card in the PC instead.
+
+1. Download `horizon-sccm-aarch64` from the latest **SCCM Retro port** run in GitHub Actions to `~/Downloads`.
+2. Shut down the Switch, put the SD card in the PC and open both of its partitions in Dolphin (the ext4 one,
+   labelled `SWR-FED`, is SCCM's Linux).
+3. Copy:
+
+   ```fish
+   cd ~/Downloads; rm -rf horizon horizon-sccm-aarch64.tar.gz
+   unzip -o horizon-sccm-aarch64.zip; tar -xzf horizon-sccm-aarch64.tar.gz
+   set res ~/.local/share/horizon-launcher/versions/nightly-2026-11-13-9f42064/.local/horizon-client/26.3
+   set home /run/media/$USER/SWR-FED/home/sccm
+   set port $home/Applications/ports/horizon
+   set own (stat -c %u:%g $home)
+   sudo mkdir -p $port/resources
+   sudo cp -r horizon/. $port/
+   sudo cp -r $res $port/resources/
+   sudo chown -R $own $home/Applications
+   sudo chmod +x $port/run.sh $port/horizon-client
+   sync
+   ```
+
+4. Eject, boot SCCM Retro. A **Horizon (Minecraft)** tile appears under **Ports and Apps**.
+
+**Updating** only replaces two small files, which is fine over Wi-Fi. Set a **Remote access password** in SCCM
+Retro (Settings > Network) once, then:
+
+```fish
+set sw sccm@<switch-address>
+scp horizon/run.sh horizon/horizon-client $sw:Applications/ports/horizon/
+```
+
+## 3. Recommended settings
+
+The first start copies the tested settings from `defaults/` (never over settings you already have):
+
+| Setting | Value |
+| --- | --- |
+| Render distance / simulation distance | 6 / 5 |
+| Far terrain (LOD) distance | 16, full detail |
+| VSync / max FPS / target FPS | off / 90 / 60 |
+| Frame pacing | efficient |
+| Culling | cave, entity, particle, leaf (hidden) and GPU culling on |
+| Resolution | native 100 %, no FXAA, TAA, upscaling or frame generation |
+| GUI scale | 2 |
+
+Avoid the **Extreme** graphics preset: it asks for thousands of chunks and freezes the console. If that happens,
+from the PC:
+
+```fish
+ssh $sw 'pkill -f horizon-client; cd ~/Applications/ports/horizon/game; rm options.txt horizon-graphics.txt'
+```
+
+The next start brings the Switch defaults back.
+
+## 4. Add mods by drag and drop
+
+Both ways are picked up every time the game starts:
+
+- **On the SD card:** drop files into `SCCM-Retro/Horizon/mods/` on the FAT32 side (`resourcepacks/` and
+  `shaderpacks/` beside it). On the Switch that folder is `/.boot/SCCM-Retro/Horizon`.
+- **Over Wi-Fi:** in Dolphin, open `sftp://sccm@<switch-address>/home/sccm/Applications/ports/horizon/game/` and
+  drag `.hmod` files into `horizon-mods/`.
+
+Every mod found is turned on (`mod.<id>:true` in `game/horizon-mods.txt`). To turn one off, change its line to
+`mod.<id>:false`: the script keeps lines you edited.
+
+Content and WebAssembly mods work. **Native mods (Rust source) do not**: the PC launcher compiles them. Fabric and
+Forge `.jar` mods never run in Horizon.
+
+## 5. Other settings
+
+`horizon-sccm.conf` in the port folder: player name (single player and LAN are offline, no Microsoft sign-in),
+fullscreen, the SD sync and the mod auto-enable.
+
+## Troubleshooting
+
+Send these from the PC while the Switch is still on (the `/tmp` log is lost at shutdown):
+
+```fish
+ssh $sw 'cat /tmp/sccm_port_horizon.log; tail -80 ~/Applications/ports/horizon/home/run.log'
+```
+
+Crash reports are in `home/crash-reports/`, with function names and lines.

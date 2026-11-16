@@ -313,6 +313,28 @@ pub(super) fn start_game<'a>(
             entity_models.as_deref(),
         )?),
     };
+    // SCCM Retro (Switch, aarch64 Linux): the Tegra X1's slow cores finish the world resources
+    // after the title's first frames, which read them. Wait for them before the game starts.
+    // A loader that ended without them failed: report its error now, not as a later panic.
+    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+    let rest_loader = match rest_loader {
+        Some(loader) => {
+            while !loader.handle.is_finished() {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            if res.rest.get().is_some() {
+                Some(loader)
+            } else {
+                let error = match loader.finish() {
+                    Ok(()) => "the loader ended without them".to_string(),
+                    Err(e) => e.to_string(),
+                };
+                log::error!("Horizon: world resources failed to load: {error}");
+                return Err(format!("world resources failed to load: {error}").into());
+            }
+        }
+        None => None,
+    };
     let mut game = Game::new(res, pack, gui, options, settings, audio, prepared)?;
     // `new DebugRenderer()` refreshes its list.
     game.refresh_debug_renderers();
