@@ -12,6 +12,9 @@ on:
       horizon_ref:
         description: Horizon commit to build (match the launcher's nightly whose resources you prepared)
         required: false
+      native_mods:
+        description: Native mods to build in (.hnmod URLs from the Horizon registry, separated by spaces)
+        required: false
 
 permissions:
   contents: write
@@ -35,6 +38,9 @@ jobs:
       # launcher's nightly commit (its folder name ends in it), not this branch's newer main.
       # Nightly 2026-11-13: versions/nightly-2026-11-13-9f42064.
       HORIZON_REF: ${{ inputs.horizon_ref || '9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0' }}
+      NATIVE_MODS: ${{ inputs.native_mods }}
+      # horizon-mixins at least this new, the pin of the launcher at the default nightly.
+      MIXINS_FLOOR: 5a64af938ec86b00d53d16a408aabc0038fb3e57
     steps:
       - uses: actions/checkout@v4
       - name: The Horizon source at that commit, with the SCCM patch
@@ -58,24 +64,51 @@ jobs:
           rustup default stable
       - name: ALSA and udev headers
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev pkg-config
+      # Native mods are mixin source: the launcher applies them to the game's source with horizon-mixins and
+      # compiles the result, which has no launcher or compiler on the Switch. Do the same here, into game/.
+      - name: Native mods (horizon-mixins apply)
+        run: |
+          set -euo pipefail
+          if [ -z "${NATIVE_MODS// /}" ]; then mv src game; echo "no native mods"; exit 0; fi
+          work="$RUNNER_TEMP/native"; mkdir -p "$work/mods" "$work/dl"
+          revs=("$MIXINS_FLOOR"); ids=()
+          for url in $NATIVE_MODS; do
+            case "$url" in https://github.com/*/releases/download/*.hnmod) ;; *) echo "::error::not a registry .hnmod URL: $url"; exit 1;; esac
+            f="$work/dl/$(basename "$url")"; curl -fsSL -o "$f" "$url"; sha256sum "$f"
+            d="$work/dl/$(basename "$url" .hnmod)"; mkdir -p "$d"; unzip -q "$f" -d "$d"
+            id=$(jq -r .id "$d/horizon-native.json"); made=$(jq -r .horizon "$d/horizon-native.json")
+            rev=$(jq -r '.mixins // empty' "$d/horizon-native.json"); [ -n "$rev" ] && revs+=("$rev")
+            [ -d "$d/mixins/$id" ] || { echo "::error::$id has no mixins/$id: only mixin mods build here"; exit 1; }
+            cp -r "$d/mixins/$id" "$work/mods/$id"; ids+=("$id $(jq -r .version "$d/horizon-native.json")")
+            [ "$made" = "$HORIZON_REF" ] || echo "::warning::$id was made for Horizon $made, building on $HORIZON_REF"
+          done
+          git clone -q https://github.com/horizon-rust/horizon-mixins "$work/tool-src"
+          # The newest of the pins, as the launcher picks it.
+          rev=$(for r in "${revs[@]}"; do git -C "$work/tool-src" log -1 --format="%ct $r" "$r"; done | sort -n | tail -1 | cut -d' ' -f2)
+          git -C "$work/tool-src" checkout -q "$rev"; echo "horizon-mixins $rev"
+          cargo install -q --locked --path "$work/tool-src/$(cd "$work/tool-src" && dirname "$(grep -rl --include Cargo.toml '^name = "horizon-mixins-cli"' .)")" --root "$work/tool"
+          rm -rf src/.git; find src -type l -delete
+          "$work/tool/bin/horizon-mixins" apply --workspace src --mods "$work/mods" --out game
+          printf '%s\n' "${ids[@]}" > NATIVE_MODS.txt; cat NATIVE_MODS.txt
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: sccm-aarch64
-          workspaces: src
+          workspaces: game
       - name: Build the game (horizon-official, shipped as horizon-client)
-        working-directory: src
+        working-directory: game
         run: cargo build --release --locked -p horizon-official --bin horizon-official
       - name: Package the SCCM port folder
         run: |
           set -euo pipefail
           out=dist/horizon
           mkdir -p "$out/resources/26.3"
-          cp src/target/release/horizon-official "$out/horizon-client"
+          cp game/target/release/horizon-official "$out/horizon-client"
           echo "$HORIZON_REF" > "$out/HORIZON_COMMIT"
+          [ -f NATIVE_MODS.txt ] && cp NATIVE_MODS.txt "$out/NATIVE_MODS.txt"
           cp packaging/sccm/run.sh packaging/sccm/sccm-port.json packaging/sccm/horizon-sccm.conf "$out/"
           cp packaging/sccm/README-SCCM.md "$out/"
           cp -r packaging/sccm/defaults "$out/"
-          cp src/LICENSE src/THIRD_PARTY_NOTICES.md "$out/"
+          lic=src; [ -d src ] || lic=game; cp "$lic/LICENSE" "$lic/THIRD_PARTY_NOTICES.md" "$out/"
           chmod +x "$out/run.sh" "$out/horizon-client"
           file "$out/horizon-client"
           echo "glibc symbols needed:"; objdump -T "$out/horizon-client" | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -3
