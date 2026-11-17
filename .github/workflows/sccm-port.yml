@@ -80,14 +80,21 @@ jobs:
             rev=$(jq -r '.mixins // empty' "$d/horizon-native.json"); [ -n "$rev" ] && revs+=("$rev")
             [ -d "$d/mixins/$id" ] || { echo "::error::$id has no mixins/$id: only mixin mods build here"; exit 1; }
             cp -r "$d/mixins/$id" "$work/mods/$id"; ids+=("$id $(jq -r .version "$d/horizon-native.json")")
-            [ "$made" = "$HORIZON_REF" ] || echo "::warning::$id was made for Horizon $made, building on $HORIZON_REF"
+            if [ "$made" != "$HORIZON_REF" ]; then
+              # horizon-mixins applies a mod only to the revision it names. The game must match the player's
+              # prepared resources, so the mod is retargeted: its injections still have to find their functions.
+              echo "::warning::$id was made for Horizon $made, applying it to $HORIZON_REF"
+              sed -i "s/^horizon_revision = \".*\"/horizon_revision = \"$HORIZON_REF\"/" "$work/mods/$id/horizon-mixin.toml"
+            fi
           done
           git clone -q https://github.com/horizon-rust/horizon-mixins "$work/tool-src"
           # The newest of the pins, as the launcher picks it.
           rev=$(for r in "${revs[@]}"; do git -C "$work/tool-src" log -1 --format="%ct $r" "$r"; done | sort -n | tail -1 | cut -d' ' -f2)
           git -C "$work/tool-src" checkout -q "$rev"; echo "horizon-mixins $rev"
           cargo install -q --locked --path "$work/tool-src/$(cd "$work/tool-src" && dirname "$(grep -rl --include Cargo.toml '^name = "horizon-mixins-cli"' .)")" --root "$work/tool"
-          rm -rf src/.git; find src -type l -delete
+          find src -type l -not -path "src/.git/*" -delete
+          # The revision horizon-mixins checks: src is its own git checkout at it, and the launcher's file too.
+          echo "$HORIZON_REF" > src/.horizon-revision
           "$work/tool/bin/horizon-mixins" apply --workspace src --mods "$work/mods" --out game
           printf '%s\n' "${ids[@]}" > NATIVE_MODS.txt; cat NATIVE_MODS.txt
       - uses: Swatinem/rust-cache@v2
