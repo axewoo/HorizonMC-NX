@@ -107,6 +107,11 @@ The next start brings the Switch defaults back.
 
 ## Overclocking safely
 
+**Use the Battery Saver profile for Horizon.** In SCCM Retro, set Horizon's overclock profile to **Battery Saver**
+(CPU 1581 MHz, GPU 538 MHz). The tested console ran just as fast with it, and with higher profiles on battery
+the whole Switch locked up a minute after the game started (nothing in the logs, power button needed). The
+RAM speed probably matters more to Horizon than the CPU and GPU clocks.
+
 SCCM Retro can overclock and undervolt the Switch, which is how the numbers above were reached. Its own tuners
 (Settings > Overclocking and tuning: RAM overclock, CPU undervolt) find the fastest stable RAM speed and the
 lowest stable CPU voltage for your console, never keep a setting that failed, and run only undocked on the
@@ -138,10 +143,41 @@ Every mod found is turned on (`mod.<id>:true` in `game/horizon-mods.txt`). To tu
 Content and WebAssembly mods work. **Native mods (Rust source) do not**: the PC launcher compiles them. Fabric and
 Forge `.jar` mods never run in Horizon.
 
-## 5. Other settings
+## 5. Online servers and your skin
 
-`horizon-sccm.conf` in the port folder: player name (single player and LAN are offline, no Microsoft sign-in),
-fullscreen, the SD sync and the mod auto-enable.
+**Online servers** need your Microsoft account. The Switch can't sign in by itself, so the PC launcher hands it
+a session: a Minecraft token that lasts about a day. Once per play day, with the Switch on, run on the PC
+(`<you>` is your Minecraft name, the AppImage is the launcher you installed in step 1):
+
+```fish
+set app (find ~ -name 'horizon-launcher*.AppImage' 2>/dev/null | head -1)
+set f ($app account session <you> --json | jq -r .session_file)
+scp $f $sw:Applications/ports/horizon/session.json; rm -f $f
+```
+
+The next start plays as you, with your skin, on any server (add it under **Multiplayer**). After 23 hours the game
+goes back to offline and the log says to refresh. The file holds a token for your account: keep a remote access
+password set, and delete `session.json` to sign out.
+
+**Offline** (single player, LAN, offline servers) you play as `PLAYER_NAME` from `horizon-sccm.conf`. For a skin,
+copy a skin PNG (64×64) to the port folder as `skin.png`, and set `SKIN_MODEL=slim` there for thin arms:
+
+```fish
+scp ~/Downloads/my-skin.png $sw:Applications/ports/horizon/skin.png
+```
+
+## 6. Other settings
+
+`horizon-sccm.conf` in the port folder: player name and skin model for offline play, fullscreen, the SD sync, the mod
+auto-enable and keeping the screen awake.
+
+## 7. Native mods
+
+Native mods (`.hnmod`, Rust source) are built into the game by GitHub, since the Switch can't compile them. Run the
+**SCCM Retro port** workflow with their registry links in `native_mods`, separated by spaces (the **Download** link
+on the mod's page at playhorizon.dev/mods), and install the new `horizon-client` as in **Updating**.
+`NATIVE_MODS.txt` in the package lists what it holds. Only mixin mods build this way, and a mod made for
+another Horizon version may not apply; the run's log says which.
 
 ## Troubleshooting
 

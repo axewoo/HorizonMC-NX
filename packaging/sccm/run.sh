@@ -103,6 +103,25 @@ export HORIZON_LAUNCHER_NO_SELF_UPDATE=1
 export RUST_BACKTRACE=1
 # The Switch's Tegra X1 has Vulkan through NVIDIA's L4T driver; wgpu picks it, then falls back to GL.
 ARGS=(--resources "$RES" --game-dir "$HERE/game" --name "$PLAYER_NAME" --home "$HERE/home")
+
+# Online play: session.json, made on the PC by `horizon-launcher account session <name>` (README, section 5).
+# Its Minecraft token lasts about a day; the game deletes the file it reads, so it gets a copy.
+SESSION="$HERE/session.json"
+if [ -f "$SESSION" ]; then
+  age=$(( $(date +%s) - $(stat -c %Y "$SESSION") ))
+  if [ "$age" -lt $(( 23 * 3600 )) ]; then
+    install -m 600 "$SESSION" "$HERE/home/.session-once.json"
+    ARGS+=(--session-file "$HERE/home/.session-once.json")
+    echo "[run.sh] signed in from session.json ($(( age / 60 )) min old)"
+  else
+    echo "[run.sh] session.json is over 23 h old: playing offline as $PLAYER_NAME; refresh it from the PC"
+  fi
+fi
+
+# Offline skin: skin.png (64x64 or 64x32) beside this script, SKIN_MODEL=classic or slim.
+if [ -f "$HERE/skin.png" ]; then
+  export HORIZON_OFFLINE_SKIN="$HERE/skin.png" HORIZON_OFFLINE_SKIN_MODEL="${SKIN_MODEL:-classic}"
+fi
 [ "$FULLSCREEN" = 1 ] && ARGS+=(--fullscreen)
 
 # Keep the screen on while the game runs. The game reads the Joy-Cons itself, so the desktop never sees
