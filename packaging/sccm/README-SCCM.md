@@ -107,6 +107,11 @@ The next start brings the Switch defaults back.
 
 ## Overclocking safely
 
+**Use the Battery Saver profile for Horizon.** In SCCM Retro, set Horizon's overclock profile to **Battery Saver**
+(CPU 1581 MHz, GPU 538 MHz). The tested console ran just as fast with it, and with higher profiles on battery
+the whole Switch locked up a minute after the game started (nothing in the logs, power button needed). The
+RAM speed matters more to Horizon than the CPU and GPU clocks.
+
 SCCM Retro can overclock and undervolt the Switch, which is how the numbers above were reached. Its own tuners
 (Settings > Overclocking and tuning: RAM overclock, CPU undervolt) find the fastest stable RAM speed and the
 lowest stable CPU voltage for your console, never keep a setting that failed, and run only undocked on the
